@@ -33,7 +33,7 @@ authRouter.get(
         const token = generateToken(req.user._id);
 
         res.redirect(
-            `http://localhost:5173/auth/google/success?token=${token}`
+            `${process.env.FRONTEND_URL}/auth/google/success?token=${token}`
         );
     }
 );
