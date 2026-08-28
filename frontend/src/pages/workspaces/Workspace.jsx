@@ -7,6 +7,9 @@ import {
   MoreVertical,
   X,
   Plus,
+  Trash2,
+  AlertTriangle,
+  Pencil,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -14,6 +17,7 @@ const Workspaces = () => {
   const navigate = useNavigate();
 
   const [workspaces, setWorkspaces] = useState([]);
+
   const [showModal, setShowModal] = useState(false);
 
   const [name, setName] = useState("");
@@ -21,8 +25,21 @@ const Workspaces = () => {
 
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [updating, setUpdating] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const [error, setError] = useState("");
+
+  // Menu state
+  const [openMenu, setOpenMenu] = useState(null);
+
+  // Workspace currently being edited
+  const [editingWorkspace, setEditingWorkspace] =
+    useState(null);
+
+  // Workspace currently being deleted
+  const [deleteWorkspace, setDeleteWorkspace] =
+    useState(null);
 
   // ==========================================
   // API URL
@@ -42,7 +59,9 @@ const Workspaces = () => {
       const token = localStorage.getItem("token");
 
       if (!token) {
-        throw new Error("Authentication token not found.");
+        throw new Error(
+          "Authentication token not found."
+        );
       }
 
       const response = await fetch(
@@ -59,11 +78,13 @@ const Workspaces = () => {
 
       if (!response.ok) {
         throw new Error(
-          result.message || "Failed to fetch workspaces"
+          result.message ||
+            "Failed to fetch workspaces"
         );
       }
 
       setWorkspaces(result.data || []);
+
     } catch (error) {
       console.error(
         "FETCH WORKSPACES ERROR:",
@@ -74,6 +95,7 @@ const Workspaces = () => {
         error.message ||
           "Failed to fetch workspaces"
       );
+
     } finally {
       setLoading(false);
     }
@@ -145,6 +167,7 @@ const Workspaces = () => {
       setName("");
       setDescription("");
       setShowModal(false);
+
     } catch (error) {
       console.error(
         "CREATE WORKSPACE ERROR:",
@@ -155,9 +178,190 @@ const Workspaces = () => {
         error.message ||
           "Failed to create workspace"
       );
+
     } finally {
       setCreating(false);
     }
+  };
+
+  // ==========================================
+  // OPEN EDIT MODAL
+  // ==========================================
+
+  const openEditModal = (workspace) => {
+    setEditingWorkspace(workspace);
+
+    setName(workspace.name || "");
+    setDescription(
+      workspace.description || ""
+    );
+
+    setError("");
+    setOpenMenu(null);
+    setShowModal(true);
+  };
+
+  // ==========================================
+  // UPDATE WORKSPACE
+  // ==========================================
+
+  const handleUpdateWorkspace = async (e) => {
+    e.preventDefault();
+
+    if (!name.trim() || !description.trim()) {
+      setError(
+        "Please enter name and description"
+      );
+      return;
+    }
+
+    if (!editingWorkspace) {
+      return;
+    }
+
+    try {
+      setUpdating(true);
+      setError("");
+
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        throw new Error(
+          "Authentication token not found."
+        );
+      }
+
+      const response = await fetch(
+        `${API_URL}/api/workspaces/${editingWorkspace._id}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            name: name.trim(),
+            description: description.trim(),
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          result.message ||
+            "Failed to update workspace"
+        );
+      }
+
+      // Update workspace in UI
+      setWorkspaces((prev) =>
+        prev.map((workspace) =>
+          workspace._id === editingWorkspace._id
+            ? result.data
+            : workspace
+        )
+      );
+
+      // Close modal
+      setEditingWorkspace(null);
+      setName("");
+      setDescription("");
+      setShowModal(false);
+
+    } catch (error) {
+      console.error(
+        "UPDATE WORKSPACE ERROR:",
+        error
+      );
+
+      setError(
+        error.message ||
+          "Failed to update workspace"
+      );
+
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  // ==========================================
+  // DELETE WORKSPACE
+  // ==========================================
+
+  const handleDeleteWorkspace = async () => {
+    if (!deleteWorkspace) {
+      return;
+    }
+
+    try {
+      setDeleting(true);
+      setError("");
+
+      const token = localStorage.getItem("token");
+
+      if (!token) {
+        throw new Error(
+          "Authentication token not found."
+        );
+      }
+
+      const response = await fetch(
+        `${API_URL}/api/workspaces/${deleteWorkspace._id}`,
+        {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          result.message ||
+            "Failed to delete workspace"
+        );
+      }
+
+      // Remove from UI
+      setWorkspaces((prev) =>
+        prev.filter(
+          (workspace) =>
+            workspace._id !==
+            deleteWorkspace._id
+        )
+      );
+
+      setDeleteWorkspace(null);
+
+    } catch (error) {
+      console.error(
+        "DELETE WORKSPACE ERROR:",
+        error
+      );
+
+      setError(
+        error.message ||
+          "Failed to delete workspace"
+      );
+
+    } finally {
+      setDeleting(false);
+      setOpenMenu(null);
+    }
+  };
+
+  // ==========================================
+  // OPEN WORKSPACE
+  // ==========================================
+
+  const openWorkspace = (workspaceId) => {
+    navigate(
+      `/workspaces/${workspaceId}/documents`
+    );
   };
 
   // ==========================================
@@ -206,13 +410,19 @@ const Workspaces = () => {
   };
 
   // ==========================================
-  // OPEN WORKSPACE
+  // CLOSE WORKSPACE FORM
   // ==========================================
 
-  const openWorkspace = (workspaceId) => {
-    navigate(
-      `/workspaces/${workspaceId}/documents`
-    );
+  const closeWorkspaceModal = () => {
+    if (creating || updating) {
+      return;
+    }
+
+    setShowModal(false);
+    setEditingWorkspace(null);
+    setName("");
+    setDescription("");
+    setError("");
   };
 
   // ==========================================
@@ -220,7 +430,10 @@ const Workspaces = () => {
   // ==========================================
 
   return (
-    <div className="min-h-full bg-[#0b0e13] text-white p-4 sm:p-6 lg:p-8">
+    <div
+      className="min-h-full bg-[#0b0e13] text-white p-4 sm:p-6 lg:p-8"
+      onClick={() => setOpenMenu(null)}
+    >
 
       {/* ======================================
           HEADER
@@ -240,7 +453,12 @@ const Workspaces = () => {
         </div>
 
         <button
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation();
+
+            setEditingWorkspace(null);
+            setName("");
+            setDescription("");
             setError("");
             setShowModal(true);
           }}
@@ -274,10 +492,6 @@ const Workspaces = () => {
 
       ) : workspaces.length === 0 ? (
 
-        /* ====================================
-           EMPTY STATE
-        ===================================== */
-
         <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-10 text-center">
 
           <BriefcaseBusiness
@@ -296,6 +510,9 @@ const Workspaces = () => {
 
           <button
             onClick={() => {
+              setEditingWorkspace(null);
+              setName("");
+              setDescription("");
               setError("");
               setShowModal(true);
             }}
@@ -309,22 +526,19 @@ const Workspaces = () => {
 
       ) : (
 
-        /* ====================================
-           WORKSPACE GRID
-        ===================================== */
-
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
 
           {workspaces.map((workspace) => (
 
             <div
               key={workspace._id}
+              onClick={(e) =>
+                e.stopPropagation()
+              }
               className="group rounded-2xl border border-white/10 bg-white/[0.02] p-5 hover:bg-white/[0.04] hover:border-white/15 transition-all"
             >
 
-              {/* =================================
-                  CARD HEADER
-              ================================== */}
+              {/* CARD HEADER */}
 
               <div className="flex items-start justify-between">
 
@@ -332,17 +546,70 @@ const Workspaces = () => {
                   <BriefcaseBusiness size={21} />
                 </div>
 
-                <button
-                  className="flex items-center justify-center w-8 h-8 rounded-lg text-white/30 hover:text-white hover:bg-white/[0.05] transition-colors"
-                >
-                  <MoreVertical size={18} />
-                </button>
+                {/* MENU */}
+
+                <div className="relative">
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+
+                      setOpenMenu(
+                        openMenu === workspace._id
+                          ? null
+                          : workspace._id
+                      );
+                    }}
+                    className="flex items-center justify-center w-8 h-8 rounded-lg text-white/30 hover:text-white hover:bg-white/[0.05] transition-colors"
+                  >
+                    <MoreVertical size={18} />
+                  </button>
+
+                  {openMenu === workspace._id && (
+
+                    <div
+                      className="absolute right-0 top-10 z-30 w-48 rounded-xl border border-white/10 bg-[#151922] shadow-2xl p-1"
+                      onClick={(e) =>
+                        e.stopPropagation()
+                      }
+                    >
+
+                      {/* EDIT */}
+
+                      <button
+                        onClick={() =>
+                          openEditModal(workspace)
+                        }
+                        className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-white/70 hover:text-white hover:bg-white/[0.05] transition-colors"
+                      >
+                        <Pencil size={16} />
+                        Edit Workspace
+                      </button>
+
+                      {/* DELETE */}
+
+                      <button
+                        onClick={() => {
+                          setDeleteWorkspace(
+                            workspace
+                          );
+                          setOpenMenu(null);
+                        }}
+                        className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm text-red-400 hover:bg-red-500/10 transition-colors"
+                      >
+                        <Trash2 size={16} />
+                        Delete Workspace
+                      </button>
+
+                    </div>
+
+                  )}
+
+                </div>
 
               </div>
 
-              {/* =================================
-                  WORKSPACE INFO
-              ================================== */}
+              {/* WORKSPACE INFO */}
 
               <div className="mt-5">
 
@@ -356,9 +623,7 @@ const Workspaces = () => {
 
               </div>
 
-              {/* =================================
-                  META INFORMATION
-              ================================== */}
+              {/* META */}
 
               <div className="flex items-center gap-4 mt-5 text-xs text-white/35">
 
@@ -381,17 +646,16 @@ const Workspaces = () => {
 
               </div>
 
-              {/* =================================
-                  OPEN WORKSPACE
-              ================================== */}
+              {/* OPEN */}
 
               <button
                 onClick={() =>
-                  openWorkspace(workspace._id)
+                  openWorkspace(
+                    workspace._id
+                  )
                 }
                 className="w-full mt-5 flex items-center justify-between px-3.5 py-2.5 rounded-xl border border-white/10 bg-white/[0.02] text-sm text-white/60 hover:text-white hover:bg-white/[0.05] transition-colors"
               >
-
                 <span>
                   Open Workspace
                 </span>
@@ -400,7 +664,6 @@ const Workspaces = () => {
                   size={16}
                   className="text-white/30 group-hover:text-purple-400 transition-colors"
                 />
-
               </button>
 
             </div>
@@ -412,51 +675,48 @@ const Workspaces = () => {
       )}
 
       {/* ======================================
-          CREATE WORKSPACE MODAL
+          CREATE / EDIT MODAL
       ======================================= */}
 
       {showModal && (
 
         <div
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
-          onClick={() => {
-            if (!creating) {
-              setShowModal(false);
-            }
-          }}
+          onClick={closeWorkspaceModal}
         >
 
           <div
             className="w-full max-w-md rounded-2xl border border-white/10 bg-[#11151c] p-5 sm:p-6 shadow-2xl"
-            onClick={(event) =>
-              event.stopPropagation()
+            onClick={(e) =>
+              e.stopPropagation()
             }
           >
 
-            {/* =================================
-                MODAL HEADER
-            ================================== */}
+            {/* HEADER */}
 
             <div className="flex items-center justify-between mb-5">
 
               <div>
+
                 <h2 className="text-lg font-semibold">
-                  Create Workspace
+                  {editingWorkspace
+                    ? "Edit Workspace"
+                    : "Create Workspace"}
                 </h2>
 
                 <p className="mt-1 text-xs text-white/35">
-                  Create a workspace for your
-                  documents.
+                  {editingWorkspace
+                    ? "Update your workspace details."
+                    : "Create a workspace for your documents."}
                 </p>
+
               </div>
 
               <button
-                onClick={() => {
-                  if (!creating) {
-                    setShowModal(false);
-                  }
-                }}
-                disabled={creating}
+                onClick={closeWorkspaceModal}
+                disabled={
+                  creating || updating
+                }
                 className="flex items-center justify-center w-8 h-8 rounded-lg text-white/40 hover:text-white hover:bg-white/[0.05] disabled:opacity-40"
               >
                 <X size={18} />
@@ -464,16 +724,18 @@ const Workspaces = () => {
 
             </div>
 
-            {/* =================================
-                FORM
-            ================================== */}
+            {/* FORM */}
 
             <form
-              onSubmit={handleCreateWorkspace}
+              onSubmit={
+                editingWorkspace
+                  ? handleUpdateWorkspace
+                  : handleCreateWorkspace
+              }
               className="space-y-4"
             >
 
-              {/* WORKSPACE NAME */}
+              {/* NAME */}
 
               <div>
 
@@ -488,7 +750,9 @@ const Workspaces = () => {
                     setName(e.target.value)
                   }
                   placeholder="e.g. Engineering Notes"
-                  disabled={creating}
+                  disabled={
+                    creating || updating
+                  }
                   className="w-full h-11 px-3 rounded-xl border border-white/10 bg-white/[0.03] text-sm text-white outline-none placeholder:text-white/25 focus:border-purple-500/50 disabled:opacity-50"
                 />
 
@@ -506,28 +770,148 @@ const Workspaces = () => {
                   rows="3"
                   value={description}
                   onChange={(e) =>
-                    setDescription(e.target.value)
+                    setDescription(
+                      e.target.value
+                    )
                   }
                   placeholder="Describe this workspace..."
-                  disabled={creating}
+                  disabled={
+                    creating || updating
+                  }
                   className="w-full px-3 py-3 rounded-xl border border-white/10 bg-white/[0.03] text-sm text-white outline-none resize-none placeholder:text-white/25 focus:border-purple-500/50 disabled:opacity-50"
                 />
 
               </div>
 
-              {/* CREATE BUTTON */}
+              {/* SUBMIT */}
 
               <button
                 type="submit"
-                disabled={creating}
+                disabled={
+                  creating || updating
+                }
                 className="w-full h-11 rounded-xl bg-[#7C3AED] hover:bg-[#9465e6] disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors"
               >
+
                 {creating
                   ? "Creating..."
+                  : updating
+                  ? "Saving Changes..."
+                  : editingWorkspace
+                  ? "Save Changes"
                   : "Create Workspace"}
+
               </button>
 
             </form>
+
+          </div>
+
+        </div>
+
+      )}
+
+      {/* ======================================
+          DELETE CONFIRMATION MODAL
+      ======================================= */}
+
+      {deleteWorkspace && (
+
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          onClick={() => {
+            if (!deleting) {
+              setDeleteWorkspace(null);
+            }
+          }}
+        >
+
+          <div
+            className="w-full max-w-md rounded-2xl border border-white/10 bg-[#11151c] p-6 shadow-2xl"
+            onClick={(e) =>
+              e.stopPropagation()
+            }
+          >
+
+            {/* TITLE */}
+
+            <div className="flex items-center gap-3">
+
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-red-500/10 text-red-400">
+                <AlertTriangle size={20} />
+              </div>
+
+              <div>
+
+                <h2 className="text-lg font-semibold">
+                  Delete Workspace?
+                </h2>
+
+                <p className="text-xs text-white/35 mt-1">
+                  This action cannot be undone.
+                </p>
+
+              </div>
+
+            </div>
+
+            {/* MESSAGE */}
+
+            <p className="mt-5 text-sm text-white/50">
+
+              Are you sure you want to delete{" "}
+
+              <span className="text-white font-medium">
+                "{deleteWorkspace.name}"
+              </span>
+              ?
+
+            </p>
+
+            <p className="mt-2 text-xs text-red-400/80">
+              All documents and related data in this
+              workspace may also be deleted.
+            </p>
+
+            {/* BUTTONS */}
+
+            <div className="flex gap-3 mt-6">
+
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() =>
+                  setDeleteWorkspace(null)
+                }
+                className="flex-1 h-11 rounded-xl border border-white/10 bg-white/[0.03] text-sm text-white/60 hover:text-white hover:bg-white/[0.05] disabled:opacity-50"
+              >
+                Cancel
+              </button>
+
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={
+                  handleDeleteWorkspace
+                }
+                className="flex-1 h-11 rounded-xl bg-red-500 hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium transition-colors flex items-center justify-center gap-2"
+              >
+
+                {deleting ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 size={16} />
+                    Delete
+                  </>
+                )}
+
+              </button>
+
+            </div>
 
           </div>
 
