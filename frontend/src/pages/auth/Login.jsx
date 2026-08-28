@@ -4,6 +4,8 @@ import logo from '../../assets/logo/logo.png';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useNavigate } from 'react-router-dom';
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 const Login = () => {
   const navigate = useNavigate();
 
@@ -21,8 +23,7 @@ const Login = () => {
   console.log('Authenticated:', isAuthenticated);
 
   const handleGoogleLogin = () => {
-    window.location.href =
-      'http://localhost:5000/api/auth/google';
+    window.location.href = `${API_URL}/api/auth/google`;
   };
 
   const handleSubmit = async (e) => {
@@ -39,10 +40,7 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-[#0b0e13] text-white flex items-center justify-center p-4">
-
       <div className="w-full max-w-md">
-
-        {/* Logo */}
         <div className="flex justify-center mb-8">
           <img
             src={logo}
@@ -51,10 +49,7 @@ const Login = () => {
           />
         </div>
 
-        {/* Card */}
         <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-6 sm:p-8 shadow-xl">
-
-          {/* Heading */}
           <div className="text-center mb-7">
             <h1 className="text-2xl font-semibold">
               Welcome back
@@ -65,20 +60,16 @@ const Login = () => {
             </p>
           </div>
 
-          {/* Form */}
           <form
             className="space-y-5"
             onSubmit={handleSubmit}
           >
-
-            {/* Email */}
             <div>
               <label className="block mb-2 text-xs font-medium text-white/60">
                 Email Address
               </label>
 
               <div className="flex items-center gap-2 h-11 px-3 rounded-xl border border-white/10 bg-white/[0.02] focus-within:border-purple-500/50 transition-colors">
-
                 <Mail
                   size={17}
                   className="shrink-0 text-white/30"
@@ -86,23 +77,17 @@ const Login = () => {
 
                 <input
                   value={email}
-                  onChange={(e) =>
-                    setEmail(e.target.value)
-                  }
+                  onChange={(e) => setEmail(e.target.value)}
                   type="email"
                   placeholder="Enter your email"
                   disabled={loading}
                   className="w-full bg-transparent outline-none text-sm text-white placeholder:text-white/25 disabled:opacity-50"
                 />
-
               </div>
             </div>
 
-            {/* Password */}
             <div>
-
               <div className="flex items-center justify-between mb-2">
-
                 <label className="text-xs font-medium text-white/60">
                   Password
                 </label>
@@ -114,11 +99,9 @@ const Login = () => {
                 >
                   Forgot password?
                 </button>
-
               </div>
 
               <div className="flex items-center gap-2 h-11 px-3 rounded-xl border border-white/10 bg-white/[0.02] focus-within:border-purple-500/50 transition-colors">
-
                 <Lock
                   size={17}
                   className="shrink-0 text-white/30"
@@ -126,9 +109,7 @@ const Login = () => {
 
                 <input
                   value={password}
-                  onChange={(e) =>
-                    setPassword(e.target.value)
-                  }
+                  onChange={(e) => setPassword(e.target.value)}
                   type="password"
                   placeholder="Enter your password"
                   disabled={loading}
@@ -142,13 +123,10 @@ const Login = () => {
                 >
                   <Eye size={17} />
                 </button>
-
               </div>
             </div>
 
-            {/* Remember Me */}
             <div className="flex items-center gap-2">
-
               <input
                 type="checkbox"
                 id="remember"
@@ -162,10 +140,8 @@ const Login = () => {
               >
                 Remember me
               </label>
-
             </div>
 
-            {/* Login Button */}
             <button
               type="submit"
               disabled={loading}
@@ -183,12 +159,9 @@ const Login = () => {
                 </>
               )}
             </button>
-
           </form>
 
-          {/* Divider */}
           <div className="flex items-center gap-3 my-6">
-
             <div className="flex-1 h-px bg-white/10" />
 
             <span className="text-xs text-white/25">
@@ -196,10 +169,8 @@ const Login = () => {
             </span>
 
             <div className="flex-1 h-px bg-white/10" />
-
           </div>
 
-          {/* Google Login */}
           <button
             type="button"
             disabled={loading}
@@ -213,9 +184,7 @@ const Login = () => {
             Continue with Google
           </button>
 
-          {/* Register */}
           <p className="text-center text-sm text-white/40 mt-6">
-
             Don't have an account?{' '}
 
             <button
@@ -226,18 +195,13 @@ const Login = () => {
             >
               Create account
             </button>
-
           </p>
-
         </div>
 
-        {/* Footer */}
         <p className="text-center mt-6 text-[11px] text-white/20">
           © 2026 DocTalk AI. All rights reserved.
         </p>
-
       </div>
-
     </div>
   );
 };

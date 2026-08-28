@@ -5,7 +5,6 @@ import {
   ChevronDown,
   LayoutDashboard,
   FileText,
-  Sparkles,
   Settings,
   X,
   LoaderCircle,
@@ -14,6 +13,8 @@ import {
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext.jsx";
 import logo from "../../assets/logo/logo.png";
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 const Sidebar = ({ isOpen, onClose }) => {
   const navigate = useNavigate();
@@ -28,10 +29,6 @@ const Sidebar = ({ isOpen, onClose }) => {
   const [loadingDocuments, setLoadingDocuments] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
-
-  // ==========================================
-  // USER
-  // ==========================================
 
   const userName = user?.name || "User";
   const userEmail = user?.email || "";
@@ -51,10 +48,6 @@ const Sidebar = ({ isOpen, onClose }) => {
     ).toUpperCase();
   };
 
-  // ==========================================
-  // WORKSPACE
-  // ==========================================
-
   const getCurrentWorkspaceName = () => {
     if (location.pathname.includes("/documents")) {
       return "Documents";
@@ -69,10 +62,6 @@ const Sidebar = ({ isOpen, onClose }) => {
 
   const currentSection = getCurrentWorkspaceName();
 
-  // ==========================================
-  // FETCH RECENT DOCUMENTS
-  // ==========================================
-
   const fetchRecentDocuments = async () => {
     if (!workspaceId) {
       setDocuments([]);
@@ -86,7 +75,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       const token = localStorage.getItem("token");
 
       const response = await fetch(
-        `http://localhost:5000/api/docs/${workspaceId}`,
+        `${API_URL}/api/docs/${workspaceId}`,
         {
           method: "GET",
           headers: {
@@ -105,7 +94,6 @@ const Sidebar = ({ isOpen, onClose }) => {
 
       const docs = data.data || [];
 
-      // Show newest 5 documents
       const recentDocs = [...docs]
         .sort(
           (a, b) =>
@@ -128,10 +116,6 @@ const Sidebar = ({ isOpen, onClose }) => {
   useEffect(() => {
     fetchRecentDocuments();
   }, [workspaceId]);
-
-  // ==========================================
-  // UPLOAD DOCUMENT
-  // ==========================================
 
   const handleUploadClick = () => {
     if (!workspaceId) {
@@ -169,7 +153,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       formData.append("document", file);
 
       const response = await fetch(
-        `http://localhost:5000/api/docs/${workspaceId}/upload-file`,
+        `${API_URL}/api/docs/${workspaceId}/upload-file`,
         {
           method: "POST",
           headers: {
@@ -189,25 +173,21 @@ const Sidebar = ({ isOpen, onClose }) => {
 
       await fetchRecentDocuments();
 
-      // Go to documents after successful upload
       navigate(`/documents/${workspaceId}`);
-
     } catch (error) {
       console.error(
         "SIDEBAR UPLOAD ERROR:",
         error
       );
 
-      setError(error.message);
+      setError(
+        error.message || "Document upload failed"
+      );
     } finally {
       setUploading(false);
       event.target.value = "";
     }
   };
-
-  // ==========================================
-  // NAVIGATION
-  // ==========================================
 
   const handleNavigation = (path) => {
     navigate(path);
@@ -216,10 +196,6 @@ const Sidebar = ({ isOpen, onClose }) => {
       onClose();
     }
   };
-
-  // ==========================================
-  // LOGOUT
-  // ==========================================
 
   const handleLogout = () => {
     logout();
@@ -230,17 +206,9 @@ const Sidebar = ({ isOpen, onClose }) => {
     }
   };
 
-  // ==========================================
-  // ACTIVE NAVIGATION
-  // ==========================================
-
   const isActive = (path) => {
     return location.pathname === path;
   };
-
-  // ==========================================
-  // RENDER
-  // ==========================================
 
   return (
     <aside
@@ -256,28 +224,17 @@ const Sidebar = ({ isOpen, onClose }) => {
         transition-transform
         duration-300
         ease-in-out
-
         ${isOpen ? "translate-x-0" : "-translate-x-full"}
-
         md:relative
         md:translate-x-0
       `}
     >
-
-      {/* =====================================
-          MOBILE CLOSE
-      ====================================== */}
-
       <button
         onClick={onClose}
         className="absolute top-4 right-4 md:hidden flex items-center justify-center w-8 h-8 rounded-lg text-white/50 hover:text-white hover:bg-white/[0.05] transition-colors"
       >
         <X size={19} />
       </button>
-
-      {/* =====================================
-          LOGO
-      ====================================== */}
 
       <div className="mb-5">
         <img
@@ -287,21 +244,15 @@ const Sidebar = ({ isOpen, onClose }) => {
         />
       </div>
 
-      {/* =====================================
-          WORKSPACE SELECTOR
-      ====================================== */}
-
       <button
         onClick={() => handleNavigation("/workspaces")}
         className="w-full flex items-center gap-3 p-3 text-white border border-white/10 rounded-xl bg-white/[0.02] hover:bg-white/[0.05] transition-colors"
       >
-
         <div className="shrink-0 text-white/70">
           <BriefcaseBusiness size={19} />
         </div>
 
         <div className="flex-1 min-w-0 text-left">
-
           <h1 className="text-sm font-medium truncate">
             {workspaceId
               ? "Current Workspace"
@@ -311,18 +262,12 @@ const Sidebar = ({ isOpen, onClose }) => {
           <p className="text-xs text-white/40 truncate">
             {currentSection}
           </p>
-
         </div>
 
         <div className="shrink-0 text-white/40">
           <ChevronDown size={17} />
         </div>
-
       </button>
-
-      {/* =====================================
-          HIDDEN FILE INPUT
-      ====================================== */}
 
       <input
         ref={fileInputRef}
@@ -331,10 +276,6 @@ const Sidebar = ({ isOpen, onClose }) => {
         onChange={handleFileChange}
         className="hidden"
       />
-
-      {/* =====================================
-          UPLOAD DOCUMENT
-      ====================================== */}
 
       <button
         onClick={handleUploadClick}
@@ -357,29 +298,18 @@ const Sidebar = ({ isOpen, onClose }) => {
         )}
       </button>
 
-      {/* =====================================
-          ERROR
-      ====================================== */}
-
       {error && (
         <div className="mt-3 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2 text-[11px] text-red-400">
           {error}
         </div>
       )}
 
-      {/* =====================================
-          MAIN NAVIGATION
-      ====================================== */}
-
       <nav className="mt-7">
-
         <p className="mb-2 px-2 text-[10px] font-semibold uppercase tracking-wider text-white/30">
           Workspace
         </p>
 
         <div className="space-y-1">
-
-          {/* Dashboard */}
           <button
             onClick={() =>
               handleNavigation("/dashboard")
@@ -397,7 +327,6 @@ const Sidebar = ({ isOpen, onClose }) => {
             <span>Dashboard</span>
           </button>
 
-          {/* Workspaces */}
           <button
             onClick={() =>
               handleNavigation("/workspaces")
@@ -414,28 +343,17 @@ const Sidebar = ({ isOpen, onClose }) => {
             <BriefcaseBusiness size={18} />
             <span>Workspaces</span>
           </button>
-
-
         </div>
-
       </nav>
 
-      {/* =====================================
-          RECENT DOCUMENTS
-      ====================================== */}
-
       <div className="mt-7 flex-1 min-h-0 overflow-hidden">
-
         <div className="flex items-center justify-between mb-2 px-2">
-
           <p className="text-[10px] font-semibold uppercase tracking-wider text-white/30">
             Recent Documents
           </p>
-
         </div>
 
         <div className="space-y-1 overflow-y-auto max-h-full">
-
           {loadingDocuments ? (
             <div className="flex items-center gap-2 px-2.5 py-3 text-xs text-white/30">
               <LoaderCircle
@@ -459,7 +377,6 @@ const Sidebar = ({ isOpen, onClose }) => {
                 }
                 className="w-full flex items-center gap-3 rounded-lg px-2.5 py-2 text-left hover:bg-white/[0.05] transition-colors"
               >
-
                 <FileText
                   size={16}
                   className="shrink-0 text-white/30"
@@ -468,22 +385,13 @@ const Sidebar = ({ isOpen, onClose }) => {
                 <span className="truncate text-xs text-white/55">
                   {document.name}
                 </span>
-
               </button>
             ))
           )}
-
         </div>
-
       </div>
 
-      {/* =====================================
-          BOTTOM SECTION
-      ====================================== */}
-
       <div className="mt-4 border-t border-white/10 pt-3">
-
-        {/* Settings */}
         <button
           onClick={() =>
             handleNavigation("/settings")
@@ -494,22 +402,17 @@ const Sidebar = ({ isOpen, onClose }) => {
           <span>Settings</span>
         </button>
 
-        {/* User Profile */}
         <button
           onClick={() =>
             handleNavigation("/profile")
           }
           className="w-full mt-2 flex items-center gap-3 rounded-lg bg-white/[0.03] px-3 py-2.5 text-left hover:bg-white/[0.05] transition-colors"
         >
-
-          {/* Avatar */}
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-purple-500/20 text-xs font-semibold text-purple-300">
             {getInitials(userName)}
           </div>
 
-          {/* User Information */}
           <div className="min-w-0 flex-1">
-
             <p className="truncate text-sm font-medium text-white">
               {userName}
             </p>
@@ -517,17 +420,14 @@ const Sidebar = ({ isOpen, onClose }) => {
             <p className="truncate text-[11px] text-white/40">
               {userEmail || "Free Plan"}
             </p>
-
           </div>
 
           <ChevronDown
             size={15}
             className="shrink-0 text-white/30"
           />
-
         </button>
 
-        {/* Logout */}
         <button
           onClick={handleLogout}
           className="w-full mt-2 flex items-center gap-3 rounded-lg px-3 py-2 text-xs text-red-400/70 hover:text-red-400 hover:bg-red-500/10 transition-colors"
@@ -535,9 +435,7 @@ const Sidebar = ({ isOpen, onClose }) => {
           <LogOut size={15} />
           <span>Logout</span>
         </button>
-
       </div>
-
     </aside>
   );
 };

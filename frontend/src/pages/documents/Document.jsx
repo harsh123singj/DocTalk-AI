@@ -12,9 +12,10 @@ import {
   FileSearch,
   ArrowLeft,
   X,
-  RefreshCw,
 } from "lucide-react";
 import { useParams, useNavigate } from "react-router-dom";
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 const Document = () => {
   const { workspaceId } = useParams();
@@ -74,7 +75,7 @@ const Document = () => {
       }
 
       const response = await fetch(
-        `http://localhost:5000/api/docs/${workspaceId}`,
+        `${API_URL}/api/docs/${workspaceId}`,
         {
           method: "GET",
           headers: {
@@ -154,7 +155,7 @@ const Document = () => {
       formData.append("document", file);
 
       const response = await fetch(
-        `http://localhost:5000/api/docs/${workspaceId}/upload-file`,
+        `${API_URL}/api/docs/${workspaceId}/upload-file`,
         {
           method: "POST",
           headers: {
@@ -213,7 +214,7 @@ const Document = () => {
       }
 
       const response = await fetch(
-        `http://localhost:5000/api/docs/delete/${documentId}`,
+        `${API_URL}/api/docs/delete/${documentId}`,
         {
           method: "DELETE",
           headers: {
@@ -281,7 +282,7 @@ const Document = () => {
       }
 
       const response = await fetch(
-        `http://localhost:5000/api/docs/${documentId}/summarize`,
+        `${API_URL}/api/docs/${documentId}/summarize`,
         {
           method: "POST",
           headers: {
